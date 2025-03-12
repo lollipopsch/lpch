@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Party Sheet Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-4xl mx-auto py-10">
+    <h1 class="text-2xl font-semibold mb-4 text-center">Party Sheet Viewer</h1>
+
+    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="block mx-auto mb-6" />
+
+    <div id="output" class="space-y-4"></div>
+  </div>
+
+  <script>
+    document.getElementById('fileUpload').addEventListener('change', handleFileUpload);
+
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        displayPartyData(jsonData);
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function displayPartyData(data) {
+      const headers = data[0];
+      const rows = data.slice(1);
+      const outputDiv = document.getElementById('output');
+      outputDiv.innerHTML = '';
+
+      rows.forEach(row => {
+        if (row[headers.indexOf("Arrive Playland")]) {
+          const party = {};
+          headers.forEach((header, i) => {
+            if (row[i]) party[header] = row[i];
+          });
+
+          const partyDiv = document.createElement('div');
+          partyDiv.className = 'bg-white rounded-lg shadow p-4';
+
+          partyDiv.innerHTML = `
+            <h2 class="text-xl font-semibold">${party["Name"]}'s Party</h2>
+            <ul class="mt-2">
+              <li><strong>Party Room:</strong> ${party["Party Room"] || '-'}</li>
+              <li><strong>Arrive Playland:</strong> ${party["Arrive Playland"] || '-'}</li>
+              <li><strong>Number of Kids:</strong> ${party["No. of Kids"] || '-'}</li>
+              <li><strong>Party Type:</strong> ${party["Party Type"] || '-'}</li>
+
+              <h3 class="font-semibold mt-2">Kids Food</h3>
+              ${party["Hot Chips"] ? `<li>Hot Chips: ${party["Hot Chips"]}</li>` : ''}
+              ${party["Biscuits"] ? `<li>Biscuits: ${party["Biscuits"]}</li>` : ''}
+              ${party["Potato Chips"] ? `<li>Potato Chips: ${party["Potato Chips"]}</li>` : ''}
+              ${party["Popcorn"] ? `<li>Popcorn: ${party["Popcorn"]}</li>` : ''}
+              ${party["Cordial"] ? `<li>Cordial: ${party["Cordial"]}</li>` : ''}
+              ${party["Nuggets"] ? `<li>Nuggets: ${party["Nuggets"]}</li>` : ''}
+
+              <h3 class="font-semibold mt-2">Adult Food</h3>
+              ${party["Wedges & Sour"] ? `<li>Wedges & Sour: ${party["Wedges & Sour"]}</li>` : ''}
+              ${party["Margherita Pizza"] ? `<li>Margherita Pizza: ${party["Margherita Pizza"]}</li>` : ''}
+
+              ${party["Comments"] ? `<div class="mt-2 italic text-sm">Comments: ${party["Comments"]}</div>` : ''}
+            </ul>
+          `;
+
+          outputDiv.appendChild(partyDiv);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
